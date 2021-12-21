@@ -375,7 +375,6 @@ class net(nn.Module):
         self.Fpn = backbone.FPN(self.cf, conv, operate_stride1=self.cf.operate_stride1)
         self.Classifier = Classifier(self.cf, conv)
         self.BBRegressor = BBRegressor(self.cf, conv)
-        self.final_conv = conv(self.cf.end_filts, self.cf.num_seg_classes, ks=1, pad=0, norm=None, relu=None)
 
 
     def train_forward(self, batch, **kwargs):
@@ -485,8 +484,7 @@ class net(nn.Module):
         """
         # Feature extraction
         fpn_outs = self.Fpn(img)
-        seg_logits = self.final_conv(fpn_outs[0])
-        selected_fmaps = [fpn_outs[i + 1] for i in self.cf.pyramid_levels]
+        selected_fmaps = [fpn_outs[i] for i in self.cf.pyramid_levels]
 
         # Loop through pyramid layers
         class_layer_outputs, bb_reg_layer_outputs = [], []  # list of lists
@@ -509,4 +507,4 @@ class net(nn.Module):
         flat_bb_outputs = bb_outputs.view(-1, bb_outputs.shape[-1])
         detections = refine_detections(self.anchors, flat_class_softmax, flat_bb_outputs, batch_ixs, self.cf)
 
-        return detections, class_logits, bb_outputs, seg_logits
+        return detections, class_logits, bb_outputs, None
