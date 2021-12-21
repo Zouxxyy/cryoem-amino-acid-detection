@@ -23,9 +23,10 @@ def get_amino_acid_coordinates(map_path, pdb_path):
                     amino_acid = parse_amino_acid(line)
                     x1, y1, z1, x2, y2, z2 = [shape[0] - 1, shape[1] - 1, shape[2] - 1, 0, 0, 0]
                 coordinates = parse_coordinates(line)
-                x = int(coordinates[0] - origin[0])
+                # pdb 是按 z, y, x 排列的
+                z = int(coordinates[0] - origin[0])
                 y = int(coordinates[1] - origin[1])
-                z = int(coordinates[2] - origin[2])
+                x = int(coordinates[2] - origin[2])
                 x1 = min(x1, x)
                 x2 = max(x2, x)
                 y1 = min(y1, y)

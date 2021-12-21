@@ -13,3 +13,5 @@ __pycache__/*
 !/assets/*
 
 *.DS_Store
+
+debug

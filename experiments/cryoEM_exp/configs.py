@@ -24,14 +24,14 @@ from default_configs import DefaultConfigs
 
 class configs(DefaultConfigs):
 
-    def __init__(self, server_env=None):
+    def __init__(self):
 
         self.dim = 3
 
         # one out of ['mrcnn', 'retina_net', 'retina_unet', 'detection_unet', 'ufrcnn', 'detection_unet'].
         self.model = 'retina_unet'
 
-        DefaultConfigs.__init__(self, self.model, server_env, self.dim)
+        DefaultConfigs.__init__(self, self.model, self.dim)
 
         #########################
         #     preprocessing     #
@@ -130,7 +130,7 @@ class configs(DefaultConfigs):
         self.seg_loss_mode = 'dice_wce'
 
         # if <1, false positive predictions in foreground are penalized less.
-        self.fp_dice_weight = 1 if self.dim == 2 else 1
+        self.fp_dice_weight = 1
 
         self.wce_weights = [1, 1, 1]
         self.detection_min_confidence = self.min_det_thresh
@@ -199,11 +199,6 @@ class configs(DefaultConfigs):
         self.window = np.array([0, 0, self.patch_size[0], self.patch_size[1], 0, self.patch_size[2]])
         self.scale = np.array([self.patch_size[0], self.patch_size[1], self.patch_size[0], self.patch_size[1],
                                self.patch_size[2], self.patch_size[2]])
-        if self.dim == 2:
-            self.rpn_bbox_std_dev = self.rpn_bbox_std_dev[:4]
-            self.bbox_std_dev = self.bbox_std_dev[:4]
-            self.window = self.window[:4]
-            self.scale = self.scale[:4]
 
         # pre-selection in proposal-layer (stage 1) for NMS-speedup. applied per batch element.
         self.pre_nms_limit = 3000 if self.dim == 2 else 6000
@@ -219,17 +214,11 @@ class configs(DefaultConfigs):
         self.detection_nms_threshold = 1e-5  # needs to be > 0, otherwise all predictions are one cluster.
         self.model_min_confidence = 0.1
 
-        if self.dim == 2:
-            self.backbone_shapes = np.array(
-                [[int(np.ceil(self.patch_size[0] / stride)),
-                  int(np.ceil(self.patch_size[1] / stride))]
-                 for stride in self.backbone_strides['xy']])
-        else:
-            self.backbone_shapes = np.array(
-                [[int(np.ceil(self.patch_size[0] / stride)),
-                  int(np.ceil(self.patch_size[1] / stride)),
-                  int(np.ceil(self.patch_size[2] / stride_z))]
-                 for stride, stride_z in zip(self.backbone_strides['xy'], self.backbone_strides['z'])])
+        self.backbone_shapes = np.array(
+            [[int(np.ceil(self.patch_size[0] / stride)),
+              int(np.ceil(self.patch_size[1] / stride)),
+              int(np.ceil(self.patch_size[2] / stride_z))]
+             for stride, stride_z in zip(self.backbone_strides['xy'], self.backbone_strides['z'])])
 
         if self.model == 'ufrcnn':
             self.operate_stride1 = True

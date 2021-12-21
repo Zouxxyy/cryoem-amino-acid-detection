@@ -21,7 +21,7 @@ import os
 
 class DefaultConfigs:
 
-    def __init__(self, model, server_env=None, dim=2):
+    def __init__(self, model, dim=3):
         #########################
         #         I/O           #
         #########################
@@ -43,9 +43,6 @@ class DefaultConfigs:
 
         # random seed for fold_generator and batch_generator.
         self.seed = 0
-
-        # number of threads for multithreaded batch generation.
-        self.n_workers = 16 if server_env else 8
 
         # if True, segmentation losses learn all categories, else only foreground vs. background.
         self.class_specific_seg_flag = False

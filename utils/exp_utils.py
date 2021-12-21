@@ -72,7 +72,7 @@ def prep_exp(dataset_path, exp_path, use_stored_settings=True):
         subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(exp_path, 'default_configs.py')),
                         shell=True)
         cf_file = import_module('cf', os.path.join(exp_path, 'configs.py'))
-        cf = cf_file.configs(server_env)
+        cf = cf_file.configs()
         # only the first process copies the model selcted in configs to exp_path.
         if not os.path.isfile(os.path.join(exp_path, 'model.py')):
             subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(exp_path, 'model.py')), shell=True)
@@ -91,7 +91,7 @@ def prep_exp(dataset_path, exp_path, use_stored_settings=True):
     else:
         # run training with source code info and copy snapshot of model to exp_dir for later testing (overwrite scripts if exp_dir already exists.)
         cf_file = import_module('cf', os.path.join(dataset_path, 'configs.py'))
-        cf = cf_file.configs(server_env)
+        cf = cf_file.configs()
         subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(exp_path, 'model.py')), shell=True)
         subprocess.call('cp {} {}'.format(cf.backbone_path, os.path.join(exp_path, 'backbone.py')), shell=True)
         subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(exp_path, 'default_configs.py')),
@@ -104,7 +104,6 @@ def prep_exp(dataset_path, exp_path, use_stored_settings=True):
     cf.test_dir = os.path.join(cf.exp_dir, 'test')
     cf.plot_dir = os.path.join(cf.exp_dir, 'plots')
     cf.experiment_name = exp_path.split("/")[-1]
-    cf.server_env = server_env
     cf.created_fold_id_pickle = False
 
     return cf
