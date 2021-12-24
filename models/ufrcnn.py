@@ -815,8 +815,8 @@ class net(nn.Module):
         gt_class_ids = batch['roi_labels']
         gt_boxes = batch['bb_target']
         axes = (0, 2, 3, 1) if self.cf.dim == 2 else (0, 2, 3, 4, 1)
-        var_seg_ohe = torch.FloatTensor(mutils.get_one_hot_encoding(batch['seg'], self.cf.num_seg_classes)).cuda()
-        var_seg = torch.LongTensor(batch['seg']).cuda()
+        # var_seg_ohe = torch.FloatTensor(mutils.get_one_hot_encoding(batch['seg'], self.cf.num_seg_classes)).cuda()
+        # var_seg = torch.LongTensor(batch['seg']).cuda()
 
 
         img = torch.from_numpy(img).float().cuda()
@@ -893,10 +893,10 @@ class net(nn.Module):
         # else:
         #     mrcnn_mask_loss = torch.FloatTensor([0]).cuda()
 
-        seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1), var_seg_ohe)
-        seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
+        # seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1), var_seg_ohe)
+        # seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
 
-        loss = batch_rpn_class_loss + batch_rpn_bbox_loss + mrcnn_class_loss + mrcnn_bbox_loss + (seg_loss_dice + seg_loss_ce) / 2
+        loss = batch_rpn_class_loss + batch_rpn_bbox_loss + mrcnn_class_loss + mrcnn_bbox_loss
 
         # monitor RPN performance: detection count = the number of correctly matched proposals per fg-class.
         dcount = [list(target_class_ids.cpu().data.numpy()).count(c) for c in np.arange(self.cf.head_classes)[1:]]
@@ -906,9 +906,9 @@ class net(nn.Module):
         results_dict['torch_loss'] = loss
         results_dict['monitor_values'] = {'loss': loss.item(), 'class_loss': mrcnn_class_loss.item()}
         results_dict['logger_string'] = "loss: {0:.2f}, rpn_class: {1:.2f}, rpn_bbox: {2:.2f}, mrcnn_class: {3:.2f}, " \
-                                        "mrcnn_bbox: {4:.2f}, dice_loss: {5:.2f}, dcount {6}"\
+                                        "mrcnn_bbox: {4:.2f}, dcount {5}"\
             .format(loss.item(), batch_rpn_class_loss.item(), batch_rpn_bbox_loss.item(), mrcnn_class_loss.item(),
-                    mrcnn_bbox_loss.item(), seg_loss_dice.item(), dcount)
+                    mrcnn_bbox_loss.item(), dcount)
 
         return results_dict
 

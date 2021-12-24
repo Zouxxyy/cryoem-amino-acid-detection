@@ -28,8 +28,8 @@ class configs(DefaultConfigs):
 
         self.dim = 3
 
-        # one out of ['mrcnn', 'retina_net', 'retina_unet', 'detection_unet', 'ufrcnn', 'detection_unet'].
-        self.model = 'retina_unet'
+        # one out of ['retina_net', 'retina_unet', 'ufrcnn', 'detection_unet', 'mrcnn'].
+        self.model = 'retina_net'
 
         DefaultConfigs.__init__(self, self.model, self.dim)
 
@@ -39,7 +39,7 @@ class configs(DefaultConfigs):
 
         # path to preprocessed data.
         self.EMdata_dir = '/mnt/data/zxy/EMdata'
-        self.pp_dir = '/mnt/data1/zxy/thesis/test_data'
+        self.pp_dir = '/mnt/data/zxy/thesis/test_data'
         self.box_size = 64
         self.core_size = 50
 
