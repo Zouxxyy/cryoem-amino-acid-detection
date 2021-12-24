@@ -45,7 +45,7 @@ def visualize_amino_acid_label(amino_acid_coordinates):
             for y in range(y1, y2 + 1):
                 for z in range(z1, z2 + 1):
                     points.append([x, y, z])
-                    colors.append(my_colors[amino_acid_id])
+                    colors.append(my_colors[amino_acid_id - 1])
     visualize(points, colors, [64, 64, 64])
 
 

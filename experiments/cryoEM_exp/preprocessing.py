@@ -19,7 +19,8 @@ def get_amino_acid_coordinates(map_path, pdb_path):
                 if parse_amino_acid(line) != amino_acid:
                     if amino_acid in amino_acids and x1 >= 0 and y1 >= 0 and z1 >= 0 \
                             and x2 < shape[0] and y2 < shape[1] and z2 < shape[1]:
-                        amino_acid_coordinates.append([x1, x2, y1, y2, z1, z2, amino_acids.index(amino_acid)])
+                        # 0 is background
+                        amino_acid_coordinates.append([x1, x2, y1, y2, z1, z2, amino_acids.index(amino_acid) + 1])
                     amino_acid = parse_amino_acid(line)
                     x1, y1, z1, x2, y2, z2 = [shape[0] - 1, shape[1] - 1, shape[2] - 1, 0, 0, 0]
                 coordinates = parse_coordinates(line)
