@@ -19,7 +19,7 @@ def read_amino_acid_label(label_path):
     return amino_acid_coordinates
 
 
-def visualize(points, colors, shape):
+def visualize():
     # draw axis
     for a in range(0, shape[0]):
         points.append([a, 0, 0])
@@ -37,49 +37,63 @@ def visualize(points, colors, shape):
     o3d.visualization.draw_geometries([voxel_grid])
 
 
-def visualize_amino_acid_label(amino_acid_coordinates):
-    points = []
-    colors = []
+def add_amino_acid_label(amino_acid_coordinates):
     for x1, x2, y1, y2, z1, z2, amino_acid_id in amino_acid_coordinates:
         for x in range(x1, x2 + 1):
-            for y in range(y1, y2 + 1):
-                for z in range(z1, z2 + 1):
-                    points.append([x, y, z])
-                    colors.append(my_colors[amino_acid_id - 1])
-    visualize(points, colors, [64, 64, 64])
+            points.append([x, y1, z1])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x, y2, z1])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x, y1, z2])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x, y2, z2])
+            colors.append(my_colors[amino_acid_id - 1])
+        for y in range(y1, y2 + 1):
+            points.append([x1, y, z1])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x1, y, z2])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x2, y, z1])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x2, y, z2])
+            colors.append(my_colors[amino_acid_id - 1])
+        for z in range(z1, z2 + 1):
+            points.append([x1, y1, z])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x1, y2, z])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x2, y1, z])
+            colors.append(my_colors[amino_acid_id - 1])
+            points.append([x2, y2, z])
+            colors.append(my_colors[amino_acid_id - 1])
 
 
-def visualize_arr(data):
-    points = []
-    colors = []
+def add_amino_acid(data):
     for x in range(0, data.shape[0]):
         for y in range(0, data.shape[1]):
             for z in range(0, data.shape[2]):
-                if data[x][y][z] > 0.5:
+                if data[x][y][z] > 1:
                     points.append([x, y, z])
                     colors.append([1.0, 0.0, 0.0])
-    visualize(points, colors, data.shape)
 
 
 if __name__ == '__main__':
-    pdb_id = '3j9d'
-    # ['label', 'map', 'txt', 'npy']
-    model = 'npy'
+    pdb_id = '6Od0'
+    # [full, crop]
+    visualize_type = 'crop'
+    pdb_path = 'debug/{}/{}.pdb'.format(pdb_id, pdb_id)
+    map_path = 'debug/{}/normalized_map.mrc'.format(pdb_id)
+    npy_path = 'debug/{}/{}_0_2_1.npy'.format(pdb_id, pdb_id)
+    label_path = 'debug/{}/{}_0_2_1.txt'.format(pdb_id, pdb_id)
 
-    if model == 'label':
-        # visualize amino acid label
-        pdb_path = 'debug/{}/{}.pdb'.format(pdb_id, pdb_id)
-        map_path = 'debug/{}/normalized_map.mrc'.format(pdb_id)
-        visualize_amino_acid_label(get_amino_acid_coordinates(map_path, pdb_path))
-    elif model == 'map':
-        # visualize map
-        map_path = 'debug/{}/normalized_map.mrc'.format(pdb_id)
-        visualize_arr(mrcfile.open(map_path, mode='r').data)
-    elif model == 'txt':
-        # visualize crop amino acid label
-        label_path = 'debug/{}/{}_2_2_2.txt'.format(pdb_id, pdb_id)
-        visualize_amino_acid_label(read_amino_acid_label(label_path))
-    elif model == 'npy':
-        # visualize crop map
-        npy_path = 'debug/{}/{}_2_2_2.npy'.format(pdb_id, pdb_id)
-        visualize_arr(np.load(npy_path))
+    points = []
+    colors = []
+    if visualize_type == 'full':
+        add_amino_acid_label(get_amino_acid_coordinates(map_path, pdb_path))
+        add_amino_acid(mrcfile.open(map_path, mode='r').data)
+        shape = mrcfile.open(map_path, mode='r').data.shape
+    else:
+        add_amino_acid_label(read_amino_acid_label(label_path))
+        add_amino_acid(np.load(npy_path))
+        shape = [64, 64, 64]
+    visualize()

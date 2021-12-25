@@ -11,3 +11,8 @@ def parse_coordinates(line):
 def parse_amino_acid(line):
     """Parses node amino acid from given 'line'"""
     return str.strip(line[17:20])
+
+
+def parse_amino_acid_num(line):
+    """Parses node amino acid num from given 'line'"""
+    return str.strip(line[22:26])

@@ -38,8 +38,9 @@ class configs(DefaultConfigs):
         #########################
 
         # path to preprocessed data.
-        self.EMdata_dir = '/mnt/data/zxy/EMdata'
-        self.pp_dir = '/mnt/data/zxy/thesis/test_data'
+        self.dataset = 'test'
+        self.EMdata_dir = '/mnt/data/zxy/amino-acid-detection/EMdata_dir/{}'.format(self.dataset)
+        self.pp_dir = '/mnt/data/zxy/amino-acid-detection/pp_dir/{}'.format(self.dataset)
         self.box_size = 64
         self.core_size = 50
 

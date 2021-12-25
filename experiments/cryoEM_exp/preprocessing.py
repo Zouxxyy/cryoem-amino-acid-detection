@@ -13,21 +13,30 @@ def get_amino_acid_coordinates(map_path, pdb_path):
     shape = normalized_map.data.shape
     amino_acid_coordinates = []
     with open(pdb_path, 'r') as pdb_file:
+        amino_acid_num = 'None'
         amino_acid = 'None'
+        x1, y1, z1, x2, y2, z2 = [shape[0] - 1, shape[1] - 1, shape[2] - 1, 0, 0, 0]
         for line in pdb_file:
             if line.startswith("ATOM"):
-                if parse_amino_acid(line) != amino_acid:
-                    if amino_acid in amino_acids and x1 >= 0 and y1 >= 0 and z1 >= 0 \
-                            and x2 < shape[0] and y2 < shape[1] and z2 < shape[1]:
-                        # 0 is background
-                        amino_acid_coordinates.append([x1, x2, y1, y2, z1, z2, amino_acids.index(amino_acid) + 1])
+                if amino_acid_num == 'None':
+                    amino_acid_num = parse_amino_acid_num(line)
                     amino_acid = parse_amino_acid(line)
+                if parse_amino_acid_num(line) != amino_acid_num:
+                    # pad is 2
+                    if amino_acid in amino_acids and x1 - 2 >= 0 and y1 - 2 >= 0 and z1 - 2 >= 0 \
+                            and x2 + 2 < shape[0] and y2 + 2 < shape[1] and z2 + 2 < shape[1]:
+                        # 0 is background
+                        amino_acid_coordinates.append([x1 - 2, x2 + 2, y1 - 2,
+                                                       y2 + 2, z1 - 2, z2 + 2, amino_acids.index(amino_acid) + 1])
+                    amino_acid = parse_amino_acid(line)
+                    amino_acid_num = parse_amino_acid_num(line)
                     x1, y1, z1, x2, y2, z2 = [shape[0] - 1, shape[1] - 1, shape[2] - 1, 0, 0, 0]
+
                 coordinates = parse_coordinates(line)
                 # pdb 是按 z, y, x 排列的
-                z = int(coordinates[0] - origin[0])
-                y = int(coordinates[1] - origin[1])
-                x = int(coordinates[2] - origin[2])
+                z = int(coordinates[0] - origin[0]) * 2
+                y = int(coordinates[1] - origin[1]) * 2
+                x = int(coordinates[2] - origin[2]) * 2
                 x1 = min(x1, x)
                 x2 = max(x2, x)
                 y1 = min(y1, y)
@@ -54,9 +63,9 @@ def crop_map_and_save_coordinates(map_path, pdb_path, output_path):
     while cur_z + (box_size - core_size) / 2 < image_shape[2] + box_size:
         chunk = padded_image[cur_x:cur_x + box_size, cur_y:cur_y + box_size, cur_z:cur_z + box_size]
         chunk_coordinates = []
-        r_x = cur_x - start_point
-        r_y = cur_y - start_point
-        r_z = cur_z - start_point
+        r_x = cur_x - box_size
+        r_y = cur_y - box_size
+        r_z = cur_z - box_size
         for x1, x2, y1, y2, z1, z2, amino_acid_id in amino_acid_coordinates:
             if x1 >= r_x and x2 <= r_x + box_size and y1 >= r_y \
                     and y2 <= r_y + box_size and z1 >= r_z and z2 <= r_z + box_size:
@@ -85,10 +94,11 @@ if __name__ == '__main__':
     output_path = cf.pp_dir
     box_size = cf.box_size
     core_size = cf.core_size
+    os.makedirs(output_path, exist_ok=True)
 
     for pdb_id in os.listdir(EMdata_path):
         map_path = os.path.join(EMdata_path, pdb_id, 'simulation/normalized_map.mrc')
-        pdb_path = os.path.join(EMdata_path, pdb_id, '{}.pdb'.format(pdb_id))
+        pdb_path = os.path.join(EMdata_path, pdb_id, 'simulation/{}.pdb'.format(pdb_id))
         if os.path.exists(map_path) and os.path.exists(pdb_path):
             crop_map_and_save_coordinates(map_path, pdb_path, output_path)
             print('finish {}'.format(pdb_id))
