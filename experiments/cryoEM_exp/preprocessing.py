@@ -1,7 +1,8 @@
+import argparse
 import mrcfile
 
 from configs import *
-from pdb_utils import *
+from utils.pdb_utils import *
 
 amino_acids = ['ALA', 'CYS', 'ASP', 'GLU', 'PHE', 'GLY', 'HIS', 'ILE', 'LYS', 'LEU',
                'MET', 'ASN', 'PRO', 'GLN', 'ARG', 'SER', 'THR', 'VAL', 'TRP', 'TYR']
@@ -89,16 +90,19 @@ def crop_map_and_save_coordinates(map_path, pdb_path, output_path):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--EMdata_dir', type=str, required=True)
+    parser.add_argument('--pp_dir', type=str, required=True)
+    args = parser.parse_args()
+
     cf = configs()
-    EMdata_path = cf.EMdata_dir
-    output_path = cf.pp_dir
     box_size = cf.box_size
     core_size = cf.core_size
-    os.makedirs(output_path, exist_ok=True)
 
-    for pdb_id in os.listdir(EMdata_path):
-        map_path = os.path.join(EMdata_path, pdb_id, 'simulation/normalized_map.mrc')
-        pdb_path = os.path.join(EMdata_path, pdb_id, 'simulation/{}.pdb'.format(pdb_id))
+    os.makedirs(args.pp_dir, exist_ok=True)
+    for pdb_id in os.listdir(args.EMdata_dir):
+        map_path = os.path.join(args.EMdata_dir, pdb_id, 'simulation/normalized_map.mrc')
+        pdb_path = os.path.join(args.EMdata_dir, pdb_id, 'simulation/{}.rebuilt.pdb'.format(pdb_id))
         if os.path.exists(map_path) and os.path.exists(pdb_path):
-            crop_map_and_save_coordinates(map_path, pdb_path, output_path)
+            crop_map_and_save_coordinates(map_path, pdb_path, args.pp_dir)
             print('finish {}'.format(pdb_id))

@@ -121,8 +121,8 @@ def test(logger):
             for index, crop_id in enumerate(batch['pid']):
                 logger.info('predict {}, count {} boxes'.format(crop_id, len(results_dict['boxes'][index])))
                 subprocess.call('cp {} {}'.format(os.path.join(cf.pp_dir, crop_id + '.npy'),
-                                                  os.path.join(cf.exp_dir, crop_id + '.npy')), shell=True)
-                with open(os.path.join(cf.exp_dir, crop_id + '.txt'), 'w') as label_file:
+                                                  os.path.join(cf.pred_dir, crop_id + '.npy')), shell=True)
+                with open(os.path.join(cf.pred_dir, crop_id + '.txt'), 'w') as label_file:
                     for dic in results_dict['boxes'][index]:
                         if dic['box_type'] == 'det':
                             x1, y1, x2, y2, z1, z2 = dic['box_coords']
@@ -133,61 +133,43 @@ def test(logger):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', type=str, default='train_test',
+    parser.add_argument('-m', '--mode', type=str, required=True,
                         help='one out of: train / test')
-    parser.add_argument('-f', '--folds', nargs='+', type=int, default=None,
-                        help='None runs over all folds in CV. otherwise specify list of folds.')
-    parser.add_argument('--exp_dir', type=str, default='/path/to/experiment/directory',
+    parser.add_argument('--pp_dir', type=str, required=True,
+                        help='preprocessing dir.')
+    parser.add_argument('--exp_dir', type=str, required=True,
                         help='path to experiment dir. will be created if non existent.')
+    parser.add_argument('--test_weight_path', type=str,
+                        help='weight path for test.')
+    parser.add_argument('--test_id_path', type=str,
+                        help='id for test.')
     parser.add_argument('--use_stored_settings', default=False, action='store_true',
                         help='load configs from existing exp_dir instead of source dir. always done for testing, '
                              'but can be set to true to do the same for training. useful in job scheduler environment, '
                              'where source code might change before the job actually runs.')
     parser.add_argument('--resume_to_checkpoint', type=str, default=None,
                         help='if resuming to checkpoint, the desired fold still needs to be parsed via --folds.')
-    parser.add_argument('--exp_source', type=str, default='experiments/toy_exp',
+    parser.add_argument('--exp_source', type=str, default='experiments/cryoEM_exp',
                         help='specifies, from which source experiment to load configs and data_loader.')
     parser.add_argument('-d', '--dev', default=False, action='store_true', help="development mode: shorten everything")
-
     args = parser.parse_args()
-    folds = args.folds
-    resume_to_checkpoint = args.resume_to_checkpoint
+
+    cf = utils.prep_exp(args)
+    model = utils.import_module('model', cf.model_path)
+    data_loader = utils.import_module('dl', os.path.join(args.exp_source, 'data_loader.py'))
 
     if args.mode == 'train':
-        cf = utils.prep_exp(args.exp_source, args.exp_dir, args.use_stored_settings)
-        if args.dev:
-            folds = [0, 1]
-            cf.num_epochs = 10
-            cf.batch_size = 1
-            cf.num_train_batches = 3
-            cf.num_val_batches = 1
-
-        model = utils.import_module('model', cf.model_path)
-        data_loader = utils.import_module('dl', os.path.join(args.exp_source, 'data_loader.py'))
-        if folds is None:
-            folds = range(cf.n_cv_splits)
-
-        for fold in folds:
+        for fold in range(cf.n_cv_splits):
             cf.fold_dir = os.path.join(cf.exp_dir, 'fold_{}'.format(fold))
             cf.fold = fold
-            cf.resume_to_checkpoint = resume_to_checkpoint
-            if not os.path.exists(cf.fold_dir):
-                os.mkdir(cf.fold_dir)
+            os.makedirs(cf.fold_dir, exist_ok=True)
             logger = utils.get_logger(cf.fold_dir)
             train(logger)
-            cf.resume_to_checkpoint = None
-
             for hdlr in logger.handlers:
                 hdlr.close()
             logger.handlers = []
 
     elif args.mode == 'test':
-        cf = utils.import_module('cf', os.path.join(args.exp_source, 'configs.py')).configs()
-        cf.exp_dir = args.exp_dir
-        model = utils.import_module('model', cf.model_path)
-        data_loader = utils.import_module('dl', os.path.join(args.exp_source, 'data_loader.py'))
-        if not os.path.exists(cf.exp_dir):
-            os.mkdir(cf.exp_dir)
         logger = utils.get_logger(cf.exp_dir)
         test(logger)
 

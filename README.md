@@ -20,15 +20,45 @@ python build.py
 
 # Prepare the Data
 ```shell
-python experiments/cryoEM_exp/preprocessing.py
+# dataset to use ['test', '400_500']
+dataset='test'
+
+python experiments/cryoEM_exp/preprocessing.py --EMdata_dir /mnt/data/zxy/amino-acid-detection/EMdata_dir/${dataset} \
+                                               --pp_dir /mnt/data/zxy/amino-acid-detection/pp_dir/${dataset}
 ```
 
 # Train
 ```shell
-python exec.py -m train --exp_dir /mnt/data1/zxy/TCIA/exec/train_test --exp_source experiments/cryoEM_exp
+# workspace
+work_dir='xxxxxxx'
+# dataset to use ['test', '400_500']
+dataset='test'
+
+if [[ ! -d "log" ]]; then
+ mkdri log
+fi
+
+nohup python -u exec.py --mode train \
+                        --exp_dir /mnt/data/zxy/amino-acid-detection/exec_dir/${work_dir} \
+                        --pp_dir /mnt/data/zxy/amino-acid-detection/pp_dir/${dataset} > ./log/${work_dir}.log 2>&1 &
+
+tail -f log/${work_dir}.log
 ```
 
 # Test
 ```shell
-python exec.py -m test --exp_dir /mnt/data1/zxy/TCIA/exec/predict_test --exp_source experiments/cryoEM_exp
+# workspace
+work_dir='test'
+# dataset to use ['test', '400_500']
+dataset='test'
+# weight_path for test
+test_weight_path='/mnt/data/zxy/amino-acid-detection/exec_dir/1226/fold_0/71_best_checkpoint/params.pth'
+# id for test
+test_id_path='scrips/test_id.txt'
+
+python exec.py --mode test \
+               --exp_dir /mnt/data/zxy/amino-acid-detection/exec_dir/${work_dir} \
+               --pp_dir /mnt/data/zxy/amino-acid-detection/pp_dir/${dataset} \
+               --test_weight_path ${test_weight_path} \
+               --test_id_path ${test_id_path}
 ```

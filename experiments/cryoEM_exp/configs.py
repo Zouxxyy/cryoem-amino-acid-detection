@@ -37,10 +37,6 @@ class configs(DefaultConfigs):
         #     preprocessing     #
         #########################
 
-        # path to preprocessed data.
-        self.dataset = 'test'
-        self.EMdata_dir = '/mnt/data/zxy/amino-acid-detection/EMdata_dir/{}'.format(self.dataset)
-        self.pp_dir = '/mnt/data/zxy/amino-acid-detection/pp_dir/{}'.format(self.dataset)
         self.box_size = 64
         self.core_size = 50
 
@@ -71,18 +67,16 @@ class configs(DefaultConfigs):
         #  Schedule / Selection #
         #########################
 
-        self.num_epochs = 100
+        self.num_epochs = 200
         self.batch_size = 4
-        self.num_train_batches = 200
+        self.num_train_batches = 400
         self.do_validation = True
         self.num_val_batches = 10
 
         #########################
         #   Testing / Plotting  #
         #########################
-
-        self.test_weight_path = os.path.join('/mnt/data1/zxy/TCIA/exec/exe_dir_1219_0/fold_0/22_best_checkpoint/params.pth')
-        self.test_ids = ['3j9d_1_1_1', '3j9d_1_2_2', '3j9d_2_2_2', '3j9d_2_2_1']
+        #########################
 
         # set the top-n-epochs to be saved for temporal averaging in testing.
         self.save_n_models = 5

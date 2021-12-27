@@ -57,7 +57,10 @@ def get_train_generators(cf, logger):
 
 
 def get_test_generator(cf, logger):
-    test_ids = cf.test_ids
+    test_ids = []
+    with open(cf.test_id_path) as test_id_file:
+        for line in test_id_file:
+            test_ids.append(line.strip('\n'))
     logger.info("data set loaded with: {} test patients".format(len(test_ids)))
     batch_gen = {'test': BatchGenerator(test_ids, batch_size=1, cf=cf, is_train=False),
                  'n_test': len(test_ids)}

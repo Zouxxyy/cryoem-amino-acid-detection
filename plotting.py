@@ -183,7 +183,7 @@ class TrainingPlot_2Panel():
             self.figure_list[-1].ax1.set_xlim(0, cf.num_epochs)
             self.figure_list[-1].ax1.grid()
 
-        self.figure_list[0].ax1.set_ylim(0, 5)
+        self.figure_list[0].ax1.set_ylim(0, 3)
         self.color_palette = ['b', 'c', 'r', 'purple', 'm', 'y', 'k', 'tab:gray']
 
     def update_and_save(self, metrics, epoch):

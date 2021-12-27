@@ -47,64 +47,44 @@ def get_logger(exp_dir):
     return logger
 
 
-def prep_exp(dataset_path, exp_path, use_stored_settings=True):
-    """
-    I/O handling, creating of experiment folder structure. Also creates a snapshot of configs/model scripts and copies them to the exp_dir.
-    This way the exp_dir contains all info needed to conduct an experiment, independent to changes in actual source code. Thus, training/inference of this experiment can be started at anytime. Therefore, the model script is copied back to the source code dir as tmp_model (tmp_backbone).
-    Provides robust structure for cloud deployment.
-    :param dataset_path: path to source code for specific data set. (e.g. medicaldetectiontoolkit/lidc_exp)
-    :param exp_path: path to experiment directory.
-    :param use_stored_settings: boolean flag. When starting training: If True, starts training from snapshot in existing experiment directory, else creates experiment directory on the fly using configs/model scripts from source code.
-    :return:
-    """
+def prep_exp(args):
+    os.makedirs(args.exp_dir, exist_ok=True)
 
-    # the first process of an experiment creates the directories and copies the config to exp_path.
-    if not os.path.exists(exp_path):
-        os.mkdir(exp_path)
-        os.mkdir(os.path.join(exp_path, 'plots'))
-        subprocess.call(
-            'cp {} {}'.format(os.path.join(dataset_path, 'configs.py'), os.path.join(exp_path, 'configs.py')),
-            shell=True)
-        subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(exp_path, 'default_configs.py')),
-                        shell=True)
-
-    if use_stored_settings:
-        subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(exp_path, 'default_configs.py')),
-                        shell=True)
-        cf_file = import_module('cf', os.path.join(exp_path, 'configs.py'))
+    if args.use_stored_settings:
+        cf_file = import_module('cf', os.path.join(args.exp_dir, 'configs.py'))
         cf = cf_file.configs()
-        # only the first process copies the model selcted in configs to exp_path.
-        if not os.path.isfile(os.path.join(exp_path, 'model.py')):
-            subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(exp_path, 'model.py')), shell=True)
-            subprocess.call(
-                'cp {} {}'.format(os.path.join(cf.backbone_path), os.path.join(exp_path, 'backbone.py')),
-                shell=True)
-
-        # copy the snapshot model scripts from exp_dir back to the source_dir as tmp_model / tmp_backbone.
-        tmp_model_path = os.path.join(cf.source_dir, 'models', 'tmp_model.py')
-        tmp_backbone_path = os.path.join(cf.source_dir, 'models', 'tmp_backbone.py')
-        subprocess.call('cp {} {}'.format(os.path.join(exp_path, 'model.py'), tmp_model_path), shell=True)
-        subprocess.call('cp {} {}'.format(os.path.join(exp_path, 'backbone.py'), tmp_backbone_path), shell=True)
-        cf.model_path = tmp_model_path
-        cf.backbone_path = tmp_backbone_path
-
+        cf.model_path = os.path.join(args.exp_dir, 'model.py')
+        cf.backbone_path = os.path.join(args.exp_dir, 'backbone.py')
     else:
-        # run training with source code info and copy snapshot of model to exp_dir for later testing (overwrite scripts if exp_dir already exists.)
-        cf_file = import_module('cf', os.path.join(dataset_path, 'configs.py'))
+        cf_file = import_module('cf', os.path.join(args.exp_source, 'configs.py'))
         cf = cf_file.configs()
-        subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(exp_path, 'model.py')), shell=True)
-        subprocess.call('cp {} {}'.format(cf.backbone_path, os.path.join(exp_path, 'backbone.py')), shell=True)
-        subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(exp_path, 'default_configs.py')),
-                        shell=True)
-        subprocess.call(
-            'cp {} {}'.format(os.path.join(dataset_path, 'configs.py'), os.path.join(exp_path, 'configs.py')),
-            shell=True)
+        subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(args.exp_dir, 'model.py')), shell=True)
+        subprocess.call('cp {} {}'.format(cf.backbone_path, os.path.join(args.exp_dir, 'backbone.py')), shell=True)
+        subprocess.call('cp {} {}'.format('default_configs.py', os.path.join(args.exp_dir, 'default_configs.py')), shell=True)
+        subprocess.call('cp {} {}'.format(os.path.join(args.exp_source, 'configs.py'), os.path.join(args.exp_dir, 'configs.py')), shell=True)
 
-    cf.exp_dir = exp_path
-    cf.test_dir = os.path.join(cf.exp_dir, 'test')
-    cf.plot_dir = os.path.join(cf.exp_dir, 'plots')
-    cf.experiment_name = exp_path.split("/")[-1]
-    cf.created_fold_id_pickle = False
+    cf.exp_dir = args.exp_dir
+    cf.pp_dir = args.pp_dir
+
+    if args.mode == 'train':
+        cf.created_fold_id_pickle = False
+        cf.resume_to_checkpoint = args.resume_to_checkpoint
+        cf.plot_dir = os.path.join(cf.exp_dir, 'plots')
+        os.makedirs(cf.plot_dir, exist_ok=True)
+
+    if args.mode == 'test':
+        assert args.test_weight_path is not None
+        assert args.test_id_path is not None
+        cf.test_weight_path = args.test_weight_path
+        cf.test_id_path = args.test_id_path
+        cf.pred_dir = os.path.join(cf.exp_dir, 'pred')
+        os.makedirs(cf.pred_dir, exist_ok=True)
+
+    if args.dev:
+        cf.num_epochs = 3
+        cf.batch_size = 1
+        cf.num_train_batches = 3
+        cf.num_val_batches = 1
 
     return cf
 
