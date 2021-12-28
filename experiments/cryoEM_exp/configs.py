@@ -29,7 +29,7 @@ class configs(DefaultConfigs):
         self.dim = 3
 
         # one out of ['retina_net', 'retina_unet', 'ufrcnn', 'detection_unet', 'mrcnn'].
-        self.model = 'retina_net'
+        self.model = 'retina_unet'
 
         DefaultConfigs.__init__(self, self.model, self.dim)
 

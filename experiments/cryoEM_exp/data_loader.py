@@ -30,7 +30,7 @@ import utils.dataloader_utils as dutils
 def get_train_generators(cf, logger):
     all_pids_list = []
     for file in os.listdir(cf.pp_dir):
-        if file.split('.')[1] == 'npy':
+        if file.split('.')[1] == 'txt':
             all_pids_list.append(file.split('.')[0])
 
     if not cf.created_fold_id_pickle:
@@ -76,7 +76,7 @@ class BatchGenerator(SlimDataLoaderBase):
         self.cur_ix = -1
 
     def generate_train_batch(self):
-        batch_data, batch_pids, batch_roi_labels, batch_bb_target = [], [], [], []
+        batch_data, batch_data_seg, batch_pids, batch_roi_labels, batch_bb_target = [], [], [], [], []
 
         train_pids = self._data
         if self.is_train:
@@ -90,8 +90,10 @@ class BatchGenerator(SlimDataLoaderBase):
                 continue
             train_pid = train_pids[b]
             data = np.load(os.path.join(self.cf.pp_dir, train_pid + '.npy'), mmap_mode='r')[np.newaxis]  # (c, x, y, z)
-            batch_pids.append(train_pid)
             batch_data.append(data)
+            data_seg = np.load(os.path.join(self.cf.pp_dir, train_pid + '_seg.npy'), mmap_mode='r')[np.newaxis]
+            batch_data_seg.append(data_seg)
+            batch_pids.append(train_pid)
             rois = []
             labels = []
             with open(os.path.join(self.cf.pp_dir, train_pid + '.txt'), 'r') as label_file:
@@ -103,6 +105,7 @@ class BatchGenerator(SlimDataLoaderBase):
             batch_bb_target.append(np.array(rois))
 
         data = np.array(batch_data)
+        data_seg = np.array(batch_data_seg)
         roi_labels = np.array(batch_roi_labels)
         bb_target = np.array(batch_bb_target)
-        return {'data': data, 'pid': batch_pids, 'roi_labels': roi_labels, 'bb_target': bb_target}
+        return {'data': data, 'seg': data_seg, 'pid': batch_pids, 'roi_labels': roi_labels, 'bb_target': bb_target}

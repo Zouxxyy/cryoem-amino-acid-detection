@@ -2,7 +2,7 @@ import mrcfile
 import numpy as np
 import open3d as o3d
 
-from preprocessing import get_amino_acid_coordinates
+from preprocessing import get_amino_acid_coordinates, get_seg_label
 
 my_colors = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.9, 0.6, 0.0], [0.3, 0.3, 0.3], [0.2, 0.0, 0.3],
              [0.3, 0.9, 0.6], [1.0, 0.8, 0.6], [0.0, 0.6, 0.3], [0.6, 0.1, 0.7], [0.2, 0.9, 0.6],
@@ -68,6 +68,15 @@ def add_amino_acid_label(amino_acid_coordinates):
             colors.append(my_colors[amino_acid_id - 1])
 
 
+def add_seg_label(data):
+    for x in range(0, data.shape[0]):
+        for y in range(0, data.shape[1]):
+            for z in range(0, data.shape[2]):
+                if data[x][y][z] > 0:
+                    points.append([x, y, z])
+                    colors.append(my_colors[data[x][y][z] - 1])
+
+
 def add_amino_acid(data):
     for x in range(0, data.shape[0]):
         for y in range(0, data.shape[1]):
@@ -79,21 +88,34 @@ def add_amino_acid(data):
 
 if __name__ == '__main__':
     pdb_id = '6Od0'
-    # [full, crop]
-    visualize_type = 'crop'
-    pdb_path = 'debug/{}/{}.pdb'.format(pdb_id, pdb_id)
+    # [full, full_crop, seg, seg_crop]
+    visualize_type = 'seg_crop'
+    pdb_path = 'debug/{}/{}.rebuilt.pdb'.format(pdb_id, pdb_id)
     map_path = 'debug/{}/normalized_map.mrc'.format(pdb_id)
-    npy_path = 'debug/{}/{}_0_2_1.npy'.format(pdb_id, pdb_id)
     label_path = 'debug/{}/{}_0_2_1.txt'.format(pdb_id, pdb_id)
+    npy_path = 'debug/{}/{}_0_2_1.npy'.format(pdb_id, pdb_id)
+    npy_seg_path = 'debug/{}/{}_0_2_1_seg.npy'.format(pdb_id, pdb_id)
 
     points = []
     colors = []
     if visualize_type == 'full':
+        data = mrcfile.open(map_path, mode='r').data
         add_amino_acid_label(get_amino_acid_coordinates(map_path, pdb_path))
-        add_amino_acid(mrcfile.open(map_path, mode='r').data)
-        shape = mrcfile.open(map_path, mode='r').data.shape
-    else:
+        add_amino_acid(data)
+        shape = data.shape
+    elif visualize_type == 'full_crop':
         add_amino_acid_label(read_amino_acid_label(label_path))
         add_amino_acid(np.load(npy_path))
         shape = [64, 64, 64]
+    elif visualize_type == 'seg':
+        data = get_seg_label(map_path, pdb_path)
+        add_amino_acid_label(get_amino_acid_coordinates(map_path, pdb_path))
+        add_seg_label(data)
+        shape = data.shape
+    elif visualize_type == 'seg_crop':
+        add_amino_acid_label(read_amino_acid_label(label_path))
+        data = np.load(npy_seg_path)
+        add_seg_label(np.load(npy_seg_path).astype(int))
+        shape = [64, 64, 64]
+
     visualize()

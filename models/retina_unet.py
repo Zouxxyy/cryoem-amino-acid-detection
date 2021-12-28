@@ -392,8 +392,10 @@ class net(nn.Module):
         img = batch['data']
         gt_class_ids = batch['roi_labels']
         gt_boxes = batch['bb_target']
-        # var_seg_ohe = torch.FloatTensor(mutils.get_one_hot_encoding(batch['seg'], self.cf.num_seg_classes)).cuda()
-        # var_seg = torch.LongTensor(batch['seg']).cuda()
+        batch_seg = batch['seg']
+        batch_seg[batch_seg >= self.cf.num_seg_classes] = self.cf.num_seg_classes - 1
+        var_seg_ohe = torch.FloatTensor(mutils.get_one_hot_encoding(batch_seg, self.cf.num_seg_classes)).cuda()
+        var_seg = torch.LongTensor(batch_seg).cuda()
 
         img = torch.from_numpy(img).float().cuda()
         batch_class_loss = torch.FloatTensor([0]).cuda()
@@ -443,14 +445,15 @@ class net(nn.Module):
             batch_bbox_loss += bbox_loss / img.shape[0]
 
         results_dict = get_results(self.cf, img.shape, detections, seg_logits, box_results_list)
-        # seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1),var_seg_ohe)
-        # seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
-        loss = batch_class_loss + batch_bbox_loss
+        seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1),var_seg_ohe)
+        seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
+        loss = batch_class_loss + batch_bbox_loss + (seg_loss_dice + seg_loss_ce) / 2
         results_dict['torch_loss'] = loss
         results_dict['monitor_values'] = {'loss': loss.item(), 'class_loss': batch_class_loss.item()}
         results_dict['logger_string'] = \
-            "loss: {0:.2f}, class: {1:.2f}, bbox: {2:.2f}"\
-            .format(loss.item(), batch_class_loss.item(), batch_bbox_loss.item())
+            "loss: {0:.2f}, class: {1:.2f}, bbox: {2:.2f}, seg dice: {3:.3f}, seg ce: {4:.3f}, mean pix. pr.: {5:.5f}"\
+            .format(loss.item(), batch_class_loss.item(), batch_bbox_loss.item(), seg_loss_dice.item(),
+                    seg_loss_ce.item(), np.mean(results_dict['seg_preds']))
 
         return results_dict
 
