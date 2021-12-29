@@ -29,7 +29,7 @@ class configs(DefaultConfigs):
         self.dim = 3
 
         # one out of ['retina_net', 'retina_unet', 'ufrcnn', 'detection_unet', 'mrcnn'].
-        self.model = 'retina_unet'
+        self.model = 'detection_unet'
 
         DefaultConfigs.__init__(self, self.model, self.dim)
 
@@ -98,7 +98,7 @@ class configs(DefaultConfigs):
         # monitor any value from training.
         self.n_monitoring_figures = 3
         # dict to assign specific plot_values to monitor_figures > 0. {1: ['class_loss'], 2: ['kl_loss', 'kl_sigmas']}
-        if self.model == 'retina_unet' or 'ufrcnn':
+        if self.model == 'retina_unet' or self.model == 'ufrcnn':
             self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'seg_loss_dice', 'seg_loss_ce'],
                                                   2: ['mAP', 'mAUC']}
         elif self.model == 'retina_net':
