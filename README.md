@@ -35,7 +35,7 @@ work_dir='xxxxxxx'
 dataset='test'
 
 if [[ ! -d "log" ]]; then
- mkdri log
+ mkdir log
 fi
 
 nohup python -u exec.py --mode train \

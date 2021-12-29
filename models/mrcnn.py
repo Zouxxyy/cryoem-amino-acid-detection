@@ -955,7 +955,9 @@ class net(nn.Module):
                                    box_results_list, return_masks=return_masks)
 
         results_dict['torch_loss'] = loss
-        results_dict['monitor_values'] = {'loss': loss.item(), 'class_loss': mrcnn_class_loss.item()}
+        results_dict['monitor_values'] = {'loss': loss.item(),
+                                          'class_loss': mrcnn_class_loss.item(), 'box_loss': mrcnn_bbox_loss.item(),
+                                          'mask_loss': mrcnn_mask_loss.item()}
 
         results_dict['logger_string'] =  \
             "loss: {0:.2f}, rpn_class: {1:.2f}, rpn_bbox: {2:.2f}, mrcnn_class: {3:.2f}, mrcnn_bbox: {4:.2f}, " \

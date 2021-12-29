@@ -446,7 +446,8 @@ class net(nn.Module):
         # seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
         loss = batch_class_loss + batch_bbox_loss
         results_dict['torch_loss'] = loss
-        results_dict['monitor_values'] = {'loss': loss.item(), 'class_loss': batch_class_loss.item()}
+        results_dict['monitor_values'] = {'loss': loss.item(),
+                                          'class_loss': batch_class_loss.item(), 'box_loss': batch_bbox_loss.item()}
         results_dict['logger_string'] = \
             "loss: {0:.2f}, class: {1:.2f}, bbox: {2:.2f}"\
             .format(loss.item(), batch_class_loss.item(), batch_bbox_loss.item())

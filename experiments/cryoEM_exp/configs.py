@@ -98,8 +98,18 @@ class configs(DefaultConfigs):
         # monitor any value from training.
         self.n_monitoring_figures = 3
         # dict to assign specific plot_values to monitor_figures > 0. {1: ['class_loss'], 2: ['kl_loss', 'kl_sigmas']}
-        self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'seg_loss_dice', 'seg_loss_ce'],
-                                              2: ['mAP', 'mAUC']}
+        if self.model == 'retina_unet' or 'ufrcnn':
+            self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'seg_loss_dice', 'seg_loss_ce'],
+                                                  2: ['mAP', 'mAUC']}
+        elif self.model == 'retina_net':
+            self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss'],
+                                                  2: ['mAP', 'mAUC']}
+        elif self.model == 'detection_unet':
+            self.assign_values_to_extra_figure = {1: ['loss'],
+                                                  2: ['mAP', 'mAUC']}
+        elif self.model == 'mrcnn':
+            self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'mask_loss'],
+                                                  2: ['mAP', 'mAUC']}
 
         # threshold for clustering predictions together (wcs = weighted cluster scoring).
         # needs to be >= the expected overlap of predictions coming from one model (typically NMS threshold).
@@ -136,7 +146,7 @@ class configs(DefaultConfigs):
         # if <1, false positive predictions in foreground are penalized less.
         self.fp_dice_weight = 1
 
-        self.wce_weights = [1, 1, 1]
+        self.wce_weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
         self.detection_min_confidence = self.min_det_thresh
 
         # if 'True', loss distinguishes all classes, else only foreground vs. background (class agnostic).
@@ -227,7 +237,7 @@ class configs(DefaultConfigs):
         if self.model == 'ufrcnn':
             self.operate_stride1 = True
             self.class_specific_seg_flag = True
-            self.num_seg_classes = 3 if self.class_specific_seg_flag else 2
+            self.num_seg_classes = 21 if self.class_specific_seg_flag else 2
             self.frcnn_mode = True
 
         if self.model == 'retina_net' or self.model == 'retina_unet' or self.model == 'prob_detector':
