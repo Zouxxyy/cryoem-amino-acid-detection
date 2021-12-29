@@ -186,7 +186,12 @@ def prepare_monitoring(cf):
     if 'rois' in cf.report_score_level:
         metric_classes.extend([v for k, v in cf.class_dict.items()])
     if 'patient' in cf.report_score_level:
-        metric_classes.extend(['patient'])
+        if cf.patient_class_of_interest  in range(1, 21):
+            metric_classes.extend(['patient'])
+        metrics['train']['mAP'] = [None]
+        metrics['val']['mAP'] = [None]
+        metrics['train']['mAUC'] = [None]
+        metrics['val']['mAUC'] = [None]
     for cl in metric_classes:
         metrics['train'][cl + '_ap'] = [None]
         metrics['val'][cl + '_ap'] = [None]

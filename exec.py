@@ -27,7 +27,7 @@ import utils.exp_utils as utils
 from evaluator import Evaluator
 from plotting import plot_batch_prediction
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def train(logger):

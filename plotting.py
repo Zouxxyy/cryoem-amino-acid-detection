@@ -184,6 +184,8 @@ class TrainingPlot_2Panel():
             self.figure_list[-1].ax1.grid()
 
         self.figure_list[0].ax1.set_ylim(0, 3)
+        self.figure_list[1].ax1.set_ylim(0, 3)
+        self.figure_list[2].ax1.set_ylim(0, 1)
         self.color_palette = ['b', 'c', 'r', 'purple', 'm', 'y', 'k', 'tab:gray']
 
     def update_and_save(self, metrics, epoch):
@@ -199,9 +201,8 @@ class TrainingPlot_2Panel():
 def detection_monitoring_plot(ax1, metrics, exp_name, color_palette, epoch, figure_ix, separate_values_dict,
                               do_validation):
     monitor_values_keys = metrics['train']['monitor_values'][1][0].keys()
-    separate_values = [v for fig_ix in separate_values_dict.values() for v in fig_ix]
     if figure_ix == 0:
-        plot_keys = [ii for ii in monitor_values_keys if ii not in separate_values]
+        plot_keys = [ii for ii in monitor_values_keys]
         plot_keys += [k for k in metrics['train'].keys() if k != 'monitor_values']
     else:
         plot_keys = separate_values_dict[figure_ix]
@@ -267,7 +268,7 @@ def plot_stat_curves(stats, outfile):
     for c in ['roc', 'prc']:
         plt.figure()
         for s in stats:
-            if s[c] is not None:
+            if s[c] is not None and not isinstance(s[c], float):
                 plt.plot(s[c][0], s[c][1], label=s['name'] + '_' + c)
         plt.title(outfile.split('/')[-1] + '_' + c)
         plt.legend(loc=3 if c == 'prc' else 4)

@@ -19,9 +19,11 @@ Retina Net. According to https://arxiv.org/abs/1708.02002
 Retina U-Net. According to https://arxiv.org/abs/1811.08661
 """
 
-import utils.model_utils as mutils
-import utils.exp_utils as utils
 import sys
+
+import utils.exp_utils as utils
+import utils.model_utils as mutils
+
 sys.path.append('../')
 from cuda_functions.nms_2D.pth_nms import nms_gpu as nms_2D
 from cuda_functions.nms_3D.pth_nms import nms_gpu as nms_3D
@@ -38,7 +40,6 @@ import torch.utils
 ############################################################
 
 class Classifier(nn.Module):
-
 
     def __init__(self, cf, conv):
         """
@@ -57,7 +58,6 @@ class Classifier(nn.Module):
         self.conv_3 = conv(n_features, n_features, ks=3, stride=anchor_stride, pad=1, relu=cf.relu)
         self.conv_4 = conv(n_features, n_features, ks=3, stride=anchor_stride, pad=1, relu=cf.relu)
         self.conv_final = conv(n_features, n_output_channels, ks=3, stride=anchor_stride, pad=1, relu=None)
-
 
     def forward(self, x):
         """
@@ -78,9 +78,7 @@ class Classifier(nn.Module):
         return [class_logits]
 
 
-
 class BBRegressor(nn.Module):
-
 
     def __init__(self, cf, conv):
         """
@@ -271,7 +269,6 @@ def refine_detections(anchors, probs, deltas, batch_ixs, cf):
     return result
 
 
-
 def get_results(cf, img_shape, detections, seg_logits, box_results_list=None):
     """
     Restores batch dimension of merged detections, unmolds detections, creates and fills results dict.
@@ -286,7 +283,7 @@ def get_results(cf, img_shape, detections, seg_logits, box_results_list=None):
                           retina_unet and dummy array for retina_net.
     """
     detections = detections.cpu().data.numpy()
-    batch_ixs = detections[:, cf.dim*2]
+    batch_ixs = detections[:, cf.dim * 2]
     detections = [detections[batch_ixs == ix] for ix in range(img_shape[0])]
 
     # for test_forward, where no previous list exists.
@@ -340,7 +337,6 @@ def get_results(cf, img_shape, detections, seg_logits, box_results_list=None):
 
 class net(nn.Module):
 
-
     def __init__(self, cf, logger):
 
         super(net, self).__init__()
@@ -376,7 +372,6 @@ class net(nn.Module):
         self.Classifier = Classifier(self.cf, conv)
         self.BBRegressor = BBRegressor(self.cf, conv)
         self.final_conv = conv(self.cf.end_filts, self.cf.num_seg_classes, ks=1, pad=0, norm=None, relu=None)
-
 
     def train_forward(self, batch, **kwargs):
         """
@@ -425,7 +420,7 @@ class net(nn.Module):
                     box_results_list[b].append({'box_coords': p, 'box_type': 'pos_anchor'})
 
             else:
-                anchor_class_match = np.array([-1]*self.np_anchors.shape[0])
+                anchor_class_match = np.array([-1] * self.np_anchors.shape[0])
                 anchor_target_deltas = np.array([0])
 
             anchor_class_match = torch.from_numpy(anchor_class_match).cuda()
@@ -445,18 +440,19 @@ class net(nn.Module):
             batch_bbox_loss += bbox_loss / img.shape[0]
 
         results_dict = get_results(self.cf, img.shape, detections, seg_logits, box_results_list)
-        seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1),var_seg_ohe)
+        seg_loss_dice = 1 - mutils.batch_dice(F.softmax(seg_logits, dim=1), var_seg_ohe)
         seg_loss_ce = F.cross_entropy(seg_logits, var_seg[:, 0])
         loss = batch_class_loss + batch_bbox_loss + (seg_loss_dice + seg_loss_ce) / 2
         results_dict['torch_loss'] = loss
-        results_dict['monitor_values'] = {'loss': loss.item(), 'class_loss': batch_class_loss.item()}
+        results_dict['monitor_values'] = {'loss': loss.item(),
+                                          'class_loss': batch_class_loss.item(), 'box_loss': batch_bbox_loss.item(),
+                                          'seg_loss_dice': seg_loss_dice.item(), 'seg_loss_ce': seg_loss_ce.item()}
         results_dict['logger_string'] = \
-            "loss: {0:.2f}, class: {1:.2f}, bbox: {2:.2f}, seg dice: {3:.3f}, seg ce: {4:.3f}, mean pix. pr.: {5:.5f}"\
-            .format(loss.item(), batch_class_loss.item(), batch_bbox_loss.item(), seg_loss_dice.item(),
-                    seg_loss_ce.item(), np.mean(results_dict['seg_preds']))
+            "loss: {0:.2f}, class: {1:.2f}, bbox: {2:.2f}, seg dice: {3:.3f}, seg ce: {4:.3f}, mean pix. pr.: {5:.5f}" \
+                .format(loss.item(), batch_class_loss.item(), batch_bbox_loss.item(), seg_loss_dice.item(),
+                        seg_loss_ce.item(), np.mean(results_dict['seg_preds']))
 
         return results_dict
-
 
     def test_forward(self, batch, **kwargs):
         """
@@ -474,7 +470,6 @@ class net(nn.Module):
         detections, _, _, seg_logits = self.forward(img)
         results_dict = get_results(self.cf, img.shape, detections, seg_logits)
         return results_dict
-
 
     def forward(self, img):
         """

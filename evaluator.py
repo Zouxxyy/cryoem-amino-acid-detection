@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import math
 import os
 from multiprocessing import Pool
 
@@ -296,6 +296,13 @@ class Evaluator():
                     pool.join()
                     self.logger.info('results from scanning over det_threshs:',
                                      [[i, j] for i, j in zip(conf_threshs, aps)])
+
+        # add mAP and mAUC
+        if 'patient' in self.cf.report_score_level:
+            avg_ap = np.mean([d['ap'] for d in all_stats if 'rois' not in d['name'] and not math.isnan(d['ap'])])
+            monitor_metrics['mAP'].append(avg_ap)
+            avg_auc = np.mean([d['auc'] for d in all_stats if 'rois' not in d['name'] and not math.isnan(d['auc'])])
+            monitor_metrics['mAUC'].append(avg_auc)
 
         if self.cf.plot_stat_curves:
             out_filename = os.path.join(self.cf.plot_dir, '{}_{}_stat_curves'.format(self.cf.fold, self.mode))

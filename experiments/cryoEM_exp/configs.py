@@ -71,7 +71,7 @@ class configs(DefaultConfigs):
         self.batch_size = 4
         self.num_train_batches = 400
         self.do_validation = True
-        self.num_val_batches = 10
+        self.num_val_batches = 40
 
         #########################
         #   Testing / Plotting  #
@@ -84,20 +84,29 @@ class configs(DefaultConfigs):
         # set a minimum epoch number for saving in case of instabilities in the first phase of training.
         self.min_save_thresh = 0
 
-        self.report_score_level = ['patient', 'rois']  # choose list from 'patient', 'rois'
-        self.class_dict = {1: 'benign', 2: 'malignant'}  # 0 is background.
-        self.patient_class_of_interest = 2  # patient metrics are only plotted for one class.
+        self.report_score_level = ['patient']  # choose list from 'patient', 'rois'
+        self.class_dict = {1: 'ALA', 2: 'CYS', 3: 'ASP', 4: 'GLU', 5: 'PHE',
+                           6: 'GLY', 7: 'HIS', 8: 'ILE', 9: 'LYS', 10: 'LEU',
+                           11: 'MET', 12: 'ASN', 13: 'PRO', 14: 'GLN', 15: 'ARG',
+                           16: 'SER', 17: 'THR', 18: 'VAL', 19: 'TRP', 20: 'TYR'}  # 0 is background.
+        self.patient_class_of_interest = -1  # patient metrics are only plotted for one class.
         self.ap_match_ious = [0.1]  # list of ious to be evaluated for ap-scoring.
 
-        self.model_selection_criteria = ['malignant_ap', 'benign_ap']  # criteria to average over for saving epochs.
+        self.model_selection_criteria = ['mAP']  # criteria to average over for saving epochs.
         self.min_det_thresh = 0.1  # minimum confidence value to select predictions for evaluation.
+
+        # monitor any value from training.
+        self.n_monitoring_figures = 3
+        # dict to assign specific plot_values to monitor_figures > 0. {1: ['class_loss'], 2: ['kl_loss', 'kl_sigmas']}
+        self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'seg_loss_dice', 'seg_loss_ce'],
+                                              2: ['mAP', 'mAUC']}
 
         # threshold for clustering predictions together (wcs = weighted cluster scoring).
         # needs to be >= the expected overlap of predictions coming from one model (typically NMS threshold).
         # if too high, preds of the same object are separate clusters.
         self.wcs_iou = 1e-5
 
-        self.plot_prediction_histograms = True
+        self.plot_prediction_histograms = False
         self.plot_stat_curves = False
 
         #########################

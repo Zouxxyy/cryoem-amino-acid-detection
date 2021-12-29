@@ -1,6 +1,6 @@
 #!/bin/bash
 
-work_dir='1228'
+work_dir='1229'
 dataset='400_500'
 
 if [[ ! -d "log" ]]; then
