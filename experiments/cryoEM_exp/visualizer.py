@@ -83,18 +83,18 @@ def add_amino_acid(data):
             for z in range(0, data.shape[2]):
                 if data[x][y][z] > 1:
                     points.append([x, y, z])
-                    colors.append([1.0, 0.0, 0.0])
+                    colors.append([0.5, 0.5, 0.5])
 
 
 if __name__ == '__main__':
-    pdb_id = '6Od0'
+    pdb_id = '6OD1'
     # [full, full_crop, seg, seg_crop]
     visualize_type = 'seg_crop'
     pdb_path = 'debug/{}/{}.rebuilt.pdb'.format(pdb_id, pdb_id)
     map_path = 'debug/{}/normalized_map.mrc'.format(pdb_id)
-    label_path = 'debug/{}/{}_0_2_1.txt'.format(pdb_id, pdb_id)
-    npy_path = 'debug/{}/{}_0_2_1.npy'.format(pdb_id, pdb_id)
-    npy_seg_path = 'debug/{}/{}_0_2_1_seg.npy'.format(pdb_id, pdb_id)
+    label_path = 'debug/{}/{}_1_1_1.txt'.format(pdb_id, pdb_id)
+    npy_path = 'debug/{}/{}_1_1_1.npy'.format(pdb_id, pdb_id)
+    npy_seg_path = 'debug/{}/{}_1_1_1_seg_pred.npy'.format(pdb_id, pdb_id)
 
     points = []
     colors = []

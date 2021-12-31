@@ -29,7 +29,7 @@ class configs(DefaultConfigs):
         self.dim = 3
 
         # one out of ['retina_net', 'retina_unet', 'ufrcnn', 'detection_unet', 'mrcnn'].
-        self.model = 'detection_unet'
+        self.model = 'retina_unet'
 
         DefaultConfigs.__init__(self, self.model, self.dim)
 
@@ -224,9 +224,9 @@ class configs(DefaultConfigs):
         self.post_nms_rois_inference = 500
 
         # Final selection of detections (refine_detections)
-        self.model_max_instances_per_batch_element = 10 if self.dim == 2 else 30  # per batch element and class.
+        self.model_max_instances_per_batch_element = 100  # per batch element and class.
         self.detection_nms_threshold = 1e-5  # needs to be > 0, otherwise all predictions are one cluster.
-        self.model_min_confidence = 0.1
+        self.model_min_confidence = 0.9
 
         self.backbone_shapes = np.array(
             [[int(np.ceil(self.patch_size[0] / stride)),

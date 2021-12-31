@@ -21,6 +21,7 @@ import os
 import subprocess
 import time
 
+import numpy as np
 import torch
 
 import utils.exp_utils as utils
@@ -120,14 +121,14 @@ def test(logger):
             results_dict = net.test_forward(batch)
             for index, crop_id in enumerate(batch['pid']):
                 logger.info('predict {}, count {} boxes'.format(crop_id, len(results_dict['boxes'][index])))
-                subprocess.call('cp {} {}'.format(os.path.join(cf.pp_dir, crop_id + '.npy'),
-                                                  os.path.join(cf.pred_dir, crop_id + '.npy')), shell=True)
-                with open(os.path.join(cf.pred_dir, crop_id + '.txt'), 'w') as label_file:
+                with open(os.path.join(cf.pred_dir, crop_id + '_pred.txt'), 'w') as label_file:
                     for dic in results_dict['boxes'][index]:
                         if dic['box_type'] == 'det':
                             x1, y1, x2, y2, z1, z2 = dic['box_coords']
                             label_file.write(str(x1) + ',' + str(x2) + ',' + str(y1) + ',' + str(y2) + ',' +
                                              str(z1) + ',' + str(z2) + ',' + str(dic['box_pred_class_id']) + '\n')
+                seg_preds = results_dict['seg_preds'][index][0]
+                np.save(os.path.join(cf.pred_dir, crop_id + '_seg_pred'), seg_preds)
 
 
 if __name__ == '__main__':
