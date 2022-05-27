@@ -1,4 +1,4 @@
-                        #!/usr/bin/env python
+#!/usr/bin/env python
 # Copyright 2018 Division of Medical Image Computing, German Cancer Research Center (DKFZ).
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

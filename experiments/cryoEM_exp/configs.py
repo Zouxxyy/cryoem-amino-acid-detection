@@ -29,7 +29,8 @@ class configs(DefaultConfigs):
         self.dim = 3
 
         # one out of ['retina_net', 'retina_unet', 'ufrcnn', 'detection_unet', 'mrcnn'].
-        self.model = 'retina_unet'
+        # self.model = 'retina_unet'
+        self.model = 'retina_net'
 
         DefaultConfigs.__init__(self, self.model, self.dim)
 
@@ -69,7 +70,7 @@ class configs(DefaultConfigs):
 
         self.num_epochs = 200
         self.batch_size = 4
-        self.num_train_batches = 400
+        self.num_train_batches = 400    # Need Change, may not cover the whole dataset 
         self.do_validation = True
         self.num_val_batches = 40
 
@@ -101,7 +102,7 @@ class configs(DefaultConfigs):
         if self.model == 'retina_unet' or self.model == 'ufrcnn':
             self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss', 'seg_loss_dice', 'seg_loss_ce'],
                                                   2: ['mAP', 'mAUC']}
-        elif self.model == 'retina_net':
+        elif self.model == 'retina_net':          # * this *
             self.assign_values_to_extra_figure = {1: ['loss', 'class_loss', 'box_loss'],
                                                   2: ['mAP', 'mAUC']}
         elif self.model == 'detection_unet':
@@ -127,7 +128,7 @@ class configs(DefaultConfigs):
          'mrcnn': self.add_mrcnn_configs,
          'ufrcnn': self.add_mrcnn_configs,
          'retina_net': self.add_mrcnn_configs,
-         'retina_unet': self.add_mrcnn_configs,
+         'retina_unet': self.add_mrcnn_configs,             # * this *
          }[self.model]()
 
     def add_det_unet_configs(self):
@@ -146,13 +147,16 @@ class configs(DefaultConfigs):
         # if <1, false positive predictions in foreground are penalized less.
         self.fp_dice_weight = 1
 
-        self.wce_weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        self.wce_weights = [1, 1, 1, 1, 1, 1,
+                            1, 1, 1, 1, 1, 1,
+                            1, 1, 1, 1, 1, 1, 1, 1, 1]
         self.detection_min_confidence = self.min_det_thresh
 
         # if 'True', loss distinguishes all classes, else only foreground vs. background (class agnostic).
         self.class_specific_seg_flag = True
         self.num_seg_classes = 21 if self.class_specific_seg_flag else 2
         self.head_classes = self.num_seg_classes
+
 
     def add_mrcnn_configs(self):
 
@@ -195,10 +199,10 @@ class configs(DefaultConfigs):
         self.rpn_nms_threshold = 0.7 if self.dim == 2 else 0.7
 
         # loss sampling settings.
-        self.rpn_train_anchors_per_image = 6  # per batch element
+        self.rpn_train_anchors_per_image = 6  # per batch element; 64 in 0117 configs 
         self.train_rois_per_image = 6  # per batch element
         self.roi_positive_ratio = 0.5
-        self.anchor_matching_iou = 0.7
+        self.anchor_matching_iou = 0.7  # DY: 0.5 in 0117 configs
 
         # factor of top-k candidates to draw from  per negative sample (stochastic-hard-example-mining).
         # poolsize to draw top-k candidates from will be shem_poolsize * n_negative_samples.
@@ -208,7 +212,7 @@ class configs(DefaultConfigs):
         self.mask_pool_size = (14, 14) if self.dim == 2 else (5, 5, 5)
         self.mask_shape = (28, 28) if self.dim == 2 else (10, 10, 10)
 
-        self.rpn_bbox_std_dev = np.array([0.1, 0.1, 0.1, 0.2, 0.2, 0.2])
+        self.rpn_bbox_std_dev = np.array([0.1, 0.1, 0.1, 0.2, 0.2, 0.2])    # need reset?
         self.bbox_std_dev = np.array([0.1, 0.1, 0.1, 0.2, 0.2, 0.2])
         self.window = np.array([0, 0, self.patch_size[0], self.patch_size[1], 0, self.patch_size[2]])
         self.scale = np.array([self.patch_size[0], self.patch_size[1], self.patch_size[0], self.patch_size[1],
@@ -219,8 +223,8 @@ class configs(DefaultConfigs):
 
         # n_proposals to be selected after NMS per batch element. too high numbers blow up memory if "detect_while_training" is True,
         # since proposals of the entire batch are forwarded through second stage in as one "batch".
-        self.roi_chunk_size = 2500 if self.dim == 2 else 600
-        self.post_nms_rois_training = 500 if self.dim == 2 else 75
+        self.roi_chunk_size = 2500 if self.dim == 2 else 600            # 600
+        self.post_nms_rois_training = 500 if self.dim == 2 else 75      # 75
         self.post_nms_rois_inference = 500
 
         # Final selection of detections (refine_detections)
@@ -228,8 +232,8 @@ class configs(DefaultConfigs):
         self.detection_nms_threshold = 1e-5  # needs to be > 0, otherwise all predictions are one cluster.
         self.model_min_confidence = 0.9
 
-        self.backbone_shapes = np.array(
-            [[int(np.ceil(self.patch_size[0] / stride)),
+        self.backbone_shapes = np.array(                            # 对应 feature map shape
+            [[int(np.ceil(self.patch_size[0] / stride)),            # self.patch_size = 64
               int(np.ceil(self.patch_size[1] / stride)),
               int(np.ceil(self.patch_size[2] / stride_z))]
              for stride, stride_z in zip(self.backbone_strides['xy'], self.backbone_strides['z'])])
@@ -246,18 +250,18 @@ class configs(DefaultConfigs):
                                             self.rpn_anchor_scales['xy']]
             self.rpn_anchor_scales['z'] = [[ii[0], ii[0] * (2 ** (1 / 3)), ii[0] * (2 ** (2 / 3))] for ii in
                                            self.rpn_anchor_scales['z']]
-            self.n_anchors_per_pos = len(self.rpn_anchor_ratios) * 3
+            self.n_anchors_per_pos = len(self.rpn_anchor_ratios) * 3            # 每个位置的anchors数量
 
             self.n_rpn_features = 256 if self.dim == 2 else 64
 
-            # pre-selection of detections for NMS-speedup. per entire batch.
-            self.pre_nms_limit = 10000 if self.dim == 2 else 50000
+            # pre-selection of detections for NMS-speedup. per entire batch.    # NMS 之前选用的框数目,
+            self.pre_nms_limit = 10000 if self.dim == 2 else 50000              # 50000个，比二维场景下要多
 
             # anchor matching iou is lower than in Mask R-CNN according to https://arxiv.org/abs/1708.02002
             self.anchor_matching_iou = 0.5
 
             # if 'True', seg loss distinguishes all classes, else only foreground vs. background (class agnostic).
-            self.num_seg_classes = 21 if self.class_specific_seg_flag else 2
+            self.num_seg_classes = 21 if self.class_specific_seg_flag else 2    # 用来做 Ca   分割的种类数目
 
             if self.model == 'retina_unet':
                 self.operate_stride1 = True

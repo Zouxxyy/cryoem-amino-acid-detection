@@ -31,15 +31,16 @@ def label_sphere(arr, location, label, sphere_radius):
 
 def get_seg_label(map_path, pdb_path):
     normalized_map = mrcfile.open(map_path, mode='r')
-    origin = normalized_map.header.origin.item(0)
+    origin = normalized_map.header.origin.item(0)           # offsets
     shape = normalized_map.data.shape
     seg_label = np.zeros(shape, dtype=np.uint8)
-
+    # 对 Ca 原子位置的一个球体，进行标注，标注的label为这个Ca原子所属氨基酸的类别
     with open(pdb_path, 'r') as pdb_file:
         for line in pdb_file:
             if line.startswith("ATOM"):
                 coordinates = parse_coordinates(line)
                 # pdb 是按 z, y, x 排列的
+                # 输入在 236 * 2 的大小下
                 z = int(coordinates[0] - origin[0]) * 2
                 y = int(coordinates[1] - origin[1]) * 2
                 x = int(coordinates[2] - origin[2]) * 2
@@ -102,37 +103,49 @@ def get_amino_acid_coordinates(map_path, pdb_path):
 
 
 def crop_map_and_save_labels(map_path, pdb_path, output_path):
+    # amino-acid coordinates, List[[x1, x2, y1, y2, z1, z2, amino_acids.index(amino_acid) + 1], ...]
     amino_acid_coordinates = get_amino_acid_coordinates(map_path, pdb_path)
 
+    # full image is the whole .mrc density map
     full_image = mrcfile.open(map_path, mode='r').data
     image_shape = np.shape(full_image)
+
+    # add padding; box_size is 64 by default
+    # this step is to add padding to the whole image, rather than the split image
     padded_image = np.zeros(
         (image_shape[0] + 2 * box_size, image_shape[1] + 2 * box_size, image_shape[2] + 2 * box_size), dtype=np.float64)
     padded_image[box_size:box_size + image_shape[0], box_size:box_size + image_shape[1],
-    box_size:box_size + image_shape[2]] = full_image
+                 box_size:box_size + image_shape[2]] = full_image
 
+    # Part2. Ca segmentation ground truth
+    # the default segmentation labels of Ca-atoms is the Amino-acid type
+    # And radiui equal to 3
     seg_label = get_seg_label(map_path, pdb_path).data
     padded_image_seg = np.zeros(padded_image.shape, dtype=np.uint8)
     padded_image_seg[box_size:box_size + image_shape[0], box_size:box_size + image_shape[1],
-    box_size:box_size + image_shape[2]] = seg_label
+                     box_size:box_size + image_shape[2]] = seg_label
 
+    # start_point = 64 - 7 = 57
     start_point = box_size - int((box_size - core_size) / 2)
     cur_x = start_point
     cur_y = start_point
     cur_z = start_point
+    # when not exceed the edges...
     while cur_z + (box_size - core_size) / 2 < image_shape[2] + box_size:
         chunk = padded_image[cur_x:cur_x + box_size, cur_y:cur_y + box_size, cur_z:cur_z + box_size]
         chunk_seg = padded_image_seg[cur_x:cur_x + box_size, cur_y:cur_y + box_size, cur_z:cur_z + box_size]
         chunk_coordinates = []
-        r_x = cur_x - box_size
-        r_y = cur_y - box_size
-        r_z = cur_z - box_size
+        r_x = cur_x - box_size          # relative x coordinate in chunk, the Upper-Left point of which, -7 at first
+        r_y = cur_y - box_size          # relative y coordinate in chunk, the Upper-Left point of which
+        r_z = cur_z - box_size          # relative z coordinate in chunk, the Upper-Left point of which
         for x1, x2, y1, y2, z1, z2, amino_acid_id in amino_acid_coordinates:
             if x1 >= r_x and x2 <= r_x + box_size and y1 >= r_y \
                     and y2 <= r_y + box_size and z1 >= r_z and z2 <= r_z + box_size:
+                # relative coordinates of each amino_cube in the chunk
                 chunk_coordinates.append([x1 - r_x, x2 - r_x, y1 - r_y, y2 - r_y, z1 - r_z, z2 - r_z, amino_acid_id])
         if len(chunk_coordinates) > 0:
             # save chunk and coordinates
+            # name with block/chunk index in [x, y, z] axis
             chunk_name = pdb_path.split('/')[-1].split('.')[0] + '_' + str(int(r_x / core_size)) + '_' \
                          + str(int(r_y / core_size)) + '_' + str(int(r_z / core_size))
             np.save(os.path.join(output_path, chunk_name), chunk)
@@ -140,6 +153,8 @@ def crop_map_and_save_labels(map_path, pdb_path, output_path):
             with open(os.path.join(output_path, chunk_name + '.txt'), 'w') as label_file:
                 for coordinate in chunk_coordinates:
                     label_file.write(','.join([str(i) for i in coordinate]) + '\n')
+
+        # begin the next lines of blocks
         cur_x += core_size
         if cur_x + (box_size - core_size) / 2 >= image_shape[0] + box_size:
             cur_y += core_size
@@ -160,6 +175,7 @@ if __name__ == '__main__':
     box_size = cf.box_size
     core_size = cf.core_size
 
+    # delete old data, then re-generate data
     if os.path.exists(args.pp_dir):
         shutil.rmtree(args.pp_dir)
     os.makedirs(args.pp_dir, exist_ok=True)

@@ -51,11 +51,13 @@ def prep_exp(args):
     os.makedirs(args.exp_dir, exist_ok=True)
 
     if args.use_stored_settings:
+        # import module: mainly for configs here
         cf_file = import_module('cf', os.path.join(args.exp_dir, 'configs.py'))
         cf = cf_file.configs()
         cf.model_path = os.path.join(args.exp_dir, 'model.py')
         cf.backbone_path = os.path.join(args.exp_dir, 'backbone.py')
     else:
+        # default this branch
         cf_file = import_module('cf', os.path.join(args.exp_source, 'configs.py'))
         cf = cf_file.configs()
         subprocess.call('cp {} {}'.format(cf.model_path, os.path.join(args.exp_dir, 'model.py')), shell=True)

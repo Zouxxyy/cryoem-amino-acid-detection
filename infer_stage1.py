@@ -110,7 +110,7 @@ def train(logger):
             plot_batch_prediction(batch, results_dict, cf)
 
 
-def test(logger):
+def infer_test(logger):
     batch_gen = data_loader.get_test_generator(cf, logger)
     net = model.net(cf, logger).cuda()
     net.load_state_dict(torch.load(cf.test_weight_path))
@@ -119,6 +119,9 @@ def test(logger):
         for _ in range(batch_gen['n_test']):
             batch = next(batch_gen['test'])
             results_dict = net.test_forward(batch)
+            detected_boxes = results_dict['boxes']
+            np.save(os.path.join(cf.output_path, "detected_boxes.npy"), detected_boxes)
+
             for index, crop_id in enumerate(batch['pid']):
                 logger.info('predict {}, count {} boxes'.format(crop_id, len(results_dict['boxes'][index])))
                 with open(os.path.join(cf.pred_dir, crop_id + '_pred.txt'), 'w') as label_file:
@@ -141,14 +144,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, required=True,
                         help='one out of: train / test')
-    parser.add_argument('--pp_dir', type=str, required=True,
+    parser.add_argument('--pp_dir', type=str, # required=True,
+                        default="/mnt/data/zxy/amino-acid-detection/pp_dir/test",
                         help='preprocessing dir.')
-    parser.add_argument('--exp_dir', type=str, required=True,
+    parser.add_argument('--exp_dir', type=str, # required=True,
+                        default="/mnt/data/fzw/amino-acid-detection/exec_dir/infer_test",
                         help='path to experiment dir. will be created if non existent.')
-    parser.add_argument('--test_weight_path', type=str,
+    parser.add_argument('--test_weight_path', type=str, # required=True,
+                        default="/mnt/data/fzw/amino-acid-detection/exec_dir/0524-0030/fold_0/189_best_checkpoint/params.pth",
                         help='weight path for test.')
     parser.add_argument('--test_id_path', type=str,
+                        default="./scrips/test_id.txt",
                         help='id for test.')
+    parser.add_argument('--output_path', type=str, # required=True,
+                        default="/mnt/data/fzw/amino-acid-detection/exec_dir/infer_test",
+                        help='weight path for test.')
     parser.add_argument('--use_stored_settings', default=False, action='store_true',
                         help='load configs from existing exp_dir instead of source dir. always done for testing, '
                              'but can be set to true to do the same for training. useful in job scheduler environment, '
@@ -166,6 +176,8 @@ if __name__ == '__main__':
     cf = utils.prep_exp(args)
     model = utils.import_module('model', cf.model_path)
     data_loader = utils.import_module('dl', os.path.join(args.exp_source, 'data_loader.py'))
+    cf.output_path = args.output_path
+
 
     if args.mode == 'train':
         for fold in range(cf.n_cv_splits):
@@ -180,7 +192,9 @@ if __name__ == '__main__':
 
     elif args.mode == 'test':
         logger = utils.get_logger(cf.exp_dir)
-        test(logger)
+        infer_test(logger)
 
     else:
         raise RuntimeError('mode specified in args is not implemented...')
+
+    
